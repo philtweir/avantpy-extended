@@ -1,4 +1,12 @@
-# AvantPy
+# AvantPy Extended
+
+This is an adaptation of AvantPy, still very rough, with extra token translation functionality to allow builtin classes, types and third-party modules to be translatable in the same way as builtin methods, exceptions and keywords are in the original (halted) AvantPy.
+
+The focus of this fork is very different to the original AvantPy - instead of helping code learners, this is targeted towards supporting regional and minority languages, by allowing their use in coding. The concept is that practicing technical vocabulary and common terms becomes fun and self-driven, easing the road to conversational discussion with other coders and hobbyists.
+
+This fork will be tidied and developed only if interest is expressed. Extended features are at proof-of-concept level. For an example use-case, see [méadrach](https://github.com/philtweir/gaeilge-meadrach).
+
+# AvantPy (original README)
 
 Python with **training wheels**: _executable pseudocode_ in any language.
 
