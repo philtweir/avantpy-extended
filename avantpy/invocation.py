@@ -60,6 +60,7 @@ to recognize that the French dialect is to be used::
 """
 import argparse
 import sys
+import os
 
 from . import session
 from . import exception_handling
@@ -145,8 +146,13 @@ def main():
         exception_handling.disable()
 
     if args.source is not None:
+        if '.py' in args.source:
+            source = os.path.splitext(os.path.basename(args.source))[0]
+            sys.path.append(os.path.dirname(os.path.abspath(args.source)))
+        else:
+            source = args.source
         try:
-            main_module = import_hook.import_main(args.source)
+            main_module = import_hook.import_main(source)
             if sys.flags.interactive:
                 main_dict = {}
                 for var in dir(main_module):
@@ -155,7 +161,7 @@ def main():
                     main_dict[var] = getattr(main_module, var)
                 console.start_console(local_vars=main_dict, show_python=show_python)
         except ModuleNotFoundError:
-            print("Could not find module ", args.source, "\n")
+            print("Could not find module ", source, "\n")
             raise
     elif args.gui:
         gui.main()

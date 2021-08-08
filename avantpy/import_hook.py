@@ -42,6 +42,15 @@ def import_main(name):
         print(_("Cannot find main module: "), name)
 
 
+class AvantPyRenamerLoader(Loader):
+    def __init__(self, loader, rename):
+        self.loader = loader
+        self.rename = rename
+
+    def exec_module(self, module):
+        module.__name__ = self.rename
+        return self.loader.exec_module(module)
+
 class AvantPyMetaFinder(MetaPathFinder):
     """A custom finder to locate modules.  The main reason for this code
        is to ensure that our custom loader, which does the code transformations,
@@ -52,25 +61,37 @@ class AvantPyMetaFinder(MetaPathFinder):
            its loader."""
 
         if not path:
-            path = [os.getcwd()]
+            path = [os.getcwd(), os.path.join(os.path.dirname(__file__), 'wrappers')]
         if "." in fullname:
             name = fullname.split(".")[-1]
         else:
             name = fullname
-        for entry in path:
-            for ext in session.state.all_dialects():
-                filename = os.path.join(entry, name + "." + ext)
-                if os.path.exists(filename):
+
+        if fullname.endswith('__nt'):
+            real_fullname = importlib.util.resolve_name(fullname[:-4], None)
+            for finder in sys.meta_path[1:]:
+                spec = finder.find_spec(real_fullname, None)
+                if spec is not None:
                     break
             else:
-                continue
+                return None
+            spec.name = fullname
+            spec.loader = AvantPyRenamerLoader(spec.loader, fullname[:-4])
+            return spec
 
-            return spec_from_file_location(
-                fullname,
-                filename,
-                loader=AvantPyLoader(filename),
-                submodule_search_locations=None,
-            )
+        for entry in path:
+            exts = [session.state.get_dialect()]
+            if None in exts:
+                exts = session.state.all_dialects()
+            for ext in exts:
+                filename = os.path.join(entry, name + "." + ext)
+                if os.path.exists(filename):
+                    return spec_from_file_location(
+                        fullname,
+                        filename,
+                        loader=AvantPyLoader(filename),
+                        submodule_search_locations=None,
+                    )
         return None  # Not an AvantPy file
 
 
