@@ -1,0 +1,2 @@
+from direct__nt.gui.OnscreenText import OnscreenText as TéacsScáileáin
+__path__ = []

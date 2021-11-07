@@ -1,0 +1,24 @@
+from ctypes import *
+import panda3d__nt as panda3d
+import os
+from avantpy.wrappers._translated import soft_remap, global_translate
+
+croílár = CDLL(os.path.join(os.path.dirname(panda3d.__file__), 'core.cpython-39-x86_64-linux-gnu.so'))
+core = CDLL(os.path.join(os.path.dirname(panda3d.__file__), 'core.cpython-39-x86_64-linux-gnu.so'))
+direct = CDLL(os.path.join(os.path.dirname(panda3d.__file__), 'direct.cpython-39-x86_64-linux-gnu.so'))
+díreach = CDLL(os.path.join(os.path.dirname(panda3d.__file__), 'direct.cpython-39-x86_64-linux-gnu.so'))
+
+PANDA3D_MAP = {
+  'core': 'croílár'
+}
+
+CORE_MAP = {
+  'clear': 'glanadh',
+  'getkey': 'faigheochair',
+  'addstr': 'cuirtea',
+}
+
+# soft_remap(core, 'croílár', CORE_MAP)
+
+# global_translate(globals(), panda3d, PANDA3D_MAP)
+__path__ = []

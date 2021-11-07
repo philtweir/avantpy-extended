@@ -1,0 +1,3 @@
+#from .díreach import *
+
+__path__ = []

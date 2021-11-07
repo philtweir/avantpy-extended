@@ -67,8 +67,11 @@ class AvantPyMetaFinder(MetaPathFinder):
         else:
             name = fullname
 
-        if fullname.endswith('__nt'):
-            real_fullname = importlib.util.resolve_name(fullname[:-4], None)
+        top_level = fullname.split('.')[0]
+        if top_level.endswith('__nt'):
+            real_fullname = top_level[:-4] + fullname[len(top_level):]
+            print(real_fullname)
+            real_fullname = importlib.util.resolve_name(real_fullname, None)
             for finder in sys.meta_path[1:]:
                 spec = finder.find_spec(real_fullname, None)
                 if spec is not None:
@@ -84,14 +87,18 @@ class AvantPyMetaFinder(MetaPathFinder):
             if None in exts:
                 exts = session.state.all_dialects()
             for ext in exts:
-                filename = os.path.join(entry, name + "." + ext)
-                if os.path.exists(filename):
-                    return spec_from_file_location(
-                        fullname,
-                        filename,
-                        loader=AvantPyLoader(filename),
-                        submodule_search_locations=None,
-                    )
+                for filename in (name, fullname):
+                    filename = fullname.split('.')
+                    filename[-1] += '.' + ext
+                    filename = os.path.join(entry, *filename)
+                    print(filename)
+                    if os.path.exists(filename):
+                        return spec_from_file_location(
+                            fullname,
+                            filename,
+                            loader=AvantPyLoader(filename),
+                            submodule_search_locations=None,
+                        )
         return None  # Not an AvantPy file
 
 

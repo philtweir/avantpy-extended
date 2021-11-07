@@ -1,0 +1,2 @@
+from direct__nt.showbase.DirectObject import DirectObject as OibiachtDíreach
+__path__ = []
