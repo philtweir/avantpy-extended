@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "avantpy-extended"
+version = "0.1.0"
+description = "AvantPy with Extensions"
+authors = ["André Roberge <andre.roberge@gmail.com>, Phil Weir <phil.weir@flaxandteal.co.uk>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+friendly-traceback = "0.0.10"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+black = "^21.10b0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
