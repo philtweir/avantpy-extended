@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "AvantPy with Extensions"
 authors = ["André Roberge <andre.roberge@gmail.com>, Phil Weir <phil.weir@flaxandteal.co.uk>"]
 license = "MIT"
+packages = [
+    { include = "avantpy" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
