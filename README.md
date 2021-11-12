@@ -6,6 +6,22 @@ The focus of this fork is very different to the original AvantPy - instead of he
 
 This fork will be tidied and developed only if interest is expressed. Extended features are at proof-of-concept level. For an example use-case, see [méadrach](https://github.com/philtweir/gaeilge-meadrach).
 
+# Getting Started With Writing Code In Irish
+
+To install this repo, type in CMD or Terminal
+```
+pip install https://github.com/philtweir/avantpy-extended/archive/master.zip
+```
+Now create a file with `.pyga` ending
+```py
+# helloworld.pyga
+priont("Dia Dhuit Domhain!")
+```
+To run `helloworld.pyga`, go into the directory it is in, and in CMD or Terminal, type:
+```py
+python -m avantpy --lang ga -s priomh.pyga
+```
+
 # AvantPy (original README)
 
 Python with **training wheels**: _executable pseudocode_ in any language.
