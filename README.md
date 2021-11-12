@@ -19,7 +19,7 @@ priont("Dia Dhuit Domhain!")
 ```
 To run `helloworld.pyga`, go into the directory it is in, and in CMD or Terminal, type:
 ```py
-python -m avantpy --lang ga -s priomh.pyga
+python -m avantpy --lang ga -s helloworld.pyga
 ```
 
 # AvantPy (original README)
