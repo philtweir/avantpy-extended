@@ -11,6 +11,9 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.9"
 friendly-traceback = "0.0.10"
+PyYAML = "^6.0"
+xdg = "^5.1.1"
+requests = "^2.26.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"

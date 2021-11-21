@@ -1,6 +1,5 @@
 version: '0.0.1'
 coreMap: {}
-mapTo: 'sdl2__nt'
 translatedSubmodules: {}
 coreMap:
   SDL_Init: 'SDL_Init2'

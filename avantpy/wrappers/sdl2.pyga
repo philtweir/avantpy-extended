@@ -1,0 +1,5 @@
+from avantpy.wrappers._translated import load_package
+
+load_package(globals(), 'sdl2')
+
+__path__ = []

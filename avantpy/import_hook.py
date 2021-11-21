@@ -1,6 +1,7 @@
 """A custom importer making use of the import hook capability
 """
 import importlib
+import yaml
 import os
 import os.path
 import sys
@@ -14,6 +15,7 @@ import friendly_traceback
 from . import session
 from . import converter
 from .my_gettext import gettext_lang
+from .wrappers._translated import global_translate, fetch_translations
 
 MAIN_MODULE_NAME = None
 COUNTER = 0
@@ -43,13 +45,21 @@ def import_main(name):
 
 
 class AvantPyRenamerLoader(Loader):
-    def __init__(self, loader, rename):
+    def __init__(self, loader, name, rename):
         self.loader = loader
+        self.name = name
         self.rename = rename
+
+    def create_module(self, spec):
+        return super().create_module(spec)
 
     def exec_module(self, module):
         module.__name__ = self.rename
-        return self.loader.exec_module(module)
+        mod = self.loader.exec_module(module)
+        return mod
+
+    def is_package(self, fullname):
+        return self.loader.is_package(fullname.replace(self.name, self.rename))
 
 class AvantPyMetaFinder(MetaPathFinder):
     """A custom finder to locate modules.  The main reason for this code
@@ -70,16 +80,18 @@ class AvantPyMetaFinder(MetaPathFinder):
         top_level = fullname.split('.')[0]
         if top_level.endswith('__nt'):
             real_fullname = top_level[:-4] + fullname[len(top_level):]
-            print(real_fullname)
             real_fullname = importlib.util.resolve_name(real_fullname, None)
             for finder in sys.meta_path[1:]:
-                spec = finder.find_spec(real_fullname, None)
+                package = top_level[:-4] if '.' in fullname else None
+                spec = finder.find_spec(real_fullname, package)
                 if spec is not None:
                     break
             else:
                 return None
             spec.name = fullname
-            spec.loader = AvantPyRenamerLoader(spec.loader, fullname[:-4])
+            total = [top_level[:-4]] + fullname.split('.')[1:]
+            rename = '.'.join(total)
+            spec.loader = AvantPyRenamerLoader(spec.loader, fullname, rename)
             return spec
 
         for entry in path:
@@ -89,9 +101,46 @@ class AvantPyMetaFinder(MetaPathFinder):
             for ext in exts:
                 for filename in (name, fullname):
                     filename = fullname.split('.')
+                    suffixes = list(filename)
+                    for _ in filename:
+                        info = fetch_translations(suffixes[0])
+                        if info is not None and os.path.exists(info):
+                            with open(info, 'r') as f:
+                                dct = yaml.safe_load(f)
+                                dct['translatedSubmodulesReverse'] = {
+                                    v['mapTo'].split('.')[1]: k
+                                    for k, v in dct['translatedSubmodules'].items()
+                                }
+
+                                if 'mapTo' in dct:
+                                    if len(filename) > 1:
+                                        if filename[1] in dct['translatedSubmodules']:
+                                            submodule = dct['translatedSubmodules'][filename[1]]
+                                            wrapped_name = submodule['mapTo']
+                                            wrapped_package = wrapped_name.split('.')[0] + '__nt'
+                                            total = [wrapped_package] + wrapped_name.split('.')[1:]
+                                            wrapped_spec = importlib.util.find_spec('.'.join(total), wrapped_package)
+                                            if wrapped_spec:
+                                                spec = importlib.util.spec_from_loader(
+                                                    fullname,
+                                                    WrappingLoader(wrapped_name, wrapped_spec, submodule['coreMap'])
+                                                )
+                                                return spec
+                                        elif filename[1] in dct['translatedSubmodulesReverse']:
+                                            wrapped_package = filename[0] + '__nt'
+                                            total = [wrapped_package] + filename[1:]
+                                            wrapped_spec = importlib.util.find_spec('.'.join(total), wrapped_package)
+                                            if wrapped_spec:
+                                                spec = importlib.util.spec_from_loader(
+                                                    '.'.join(filename),
+                                                    WrappingLoader('.'.join(filename), wrapped_spec, {})
+                                                )
+                                                return spec
+                        back = suffixes.pop()
+
                     filename[-1] += '.' + ext
+
                     filename = os.path.join(entry, *filename)
-                    print(filename)
                     if os.path.exists(filename):
                         return spec_from_file_location(
                             fullname,
@@ -104,6 +153,29 @@ class AvantPyMetaFinder(MetaPathFinder):
 
 sys.meta_path.insert(0, AvantPyMetaFinder())
 
+
+class WrappingLoader(Loader):
+    def __init__(self, wrapped_name, wrapped_spec, translation_dict):
+        self.wrapped_spec = wrapped_spec
+        self.wrapped_name = wrapped_name
+        self.translation_dict = translation_dict
+        super().__init__()
+
+    def is_package(self, fullname):
+        return self.wrapped_spec.parent == self.wrapped_spec.name
+
+    def create_module(self, spec):
+        module = importlib.util.module_from_spec(self.wrapped_spec)
+        global_translate(module.__dict__, module, self.translation_dict)
+        module.__dict__.update({
+            k: module.__dict__[v]
+            for k, v in
+            self.translation_dict.items()
+        })
+        return module
+
+    def exec_module(self, module):
+        self.wrapped_spec.loader.exec_module(module)
 
 class AvantPyLoader(Loader):
     """A custom loader which will transform the source prior to its execution"""
@@ -156,6 +228,6 @@ class AvantPyLoader(Loader):
 
         try:
             exec(code_obj, vars(module))
-        except Exception:
+        except Exception as e:
             friendly_traceback.explain()
         return

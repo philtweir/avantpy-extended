@@ -1,0 +1,22 @@
+version: '0.0.1'
+coreMap: {}
+mapTo: 'panda3d__nt'
+translatedSubmodules:
+  croílár:
+    mapTo: 'panda3d.core'
+    coreMap:
+      Camera: 'Ceamara'
+      CollisionTraverser: 'TrasnaitheoirImbhuailtí'
+      CollisionNode: 'NódImbhailte'
+      CollisionHandlerQueue: 'ScuaineLáimhseálaíImbhuailtí'
+      CollisionRay: 'GaImbhuailte'
+      AmbientLight: 'SolasComhthimpeallach'
+      DirectionalLight: 'SolasTreoch'
+      LightAttrib: 'AitreabSolais'
+      TextNode: 'NódTéacs'
+      LPoint3: 'LPointe3'
+      LVector3: 'LVeicteoir3'
+      BitMask32: 'MascGiotán32'
+  díreach:
+    mapTo: 'panda3d.direct'
+    coreMap: {}
