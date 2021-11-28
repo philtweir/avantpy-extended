@@ -1,0 +1,18 @@
+version: 0.0.1
+avantpyExtendedVersion: ">=0.0.15"
+packages:
+  sdl2:
+    version: 0.0.1 # sdl2 0.9.7
+    name: sdl2
+  díreach:
+    version: 0.0.1 # sdl2 0.9.7
+    name: direct
+  panda3d:
+    version: 0.0.1 # sdl2 0.9.7
+    name: panda3d
+  curses:
+    version: 0.0.1 # sdl2 0.9.7
+    name: curses
+  antam:
+    version: 0.0.1 # sdl2 0.9.7
+    builtin: True

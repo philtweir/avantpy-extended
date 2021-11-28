@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "avantpy_trans.panda3d"
-version = "0.0.1"
+version = "0.0.2"
 description = "avantpy translations"
 authors = ["Phil Weir <phil.t.weir@googlemail.com>"]
 packages = [

@@ -1,5 +1,0 @@
-version: 0.0.1
-avantpyExtendedVersion: ">=0.0.15"
-packages:
-  sdl2:
-  - version: 0.0.1 # sdl2 0.9.7

@@ -50,16 +50,6 @@ def global_translate(globals, module, translation_map):
         if k in module.__dict__
     })
 
-def load_translations(yml, glbls, pkg):
-    with open(yml, 'r') as f:
-        mappings = yaml.safe_load(f)
-
-    if 'coreMap' in mappings:
-        global_translate(glbls, pkg, mappings['coreMap'])
-
-    if 'classMap' in mappings:
-        class_translate(pkg, mappings['coreMap'])
-
 def class_translate(pkg, class_map):
     for cls, cls_def in class_map.items():
         if 'via' in cls_def:
@@ -68,8 +58,28 @@ def class_translate(pkg, class_map):
             containing_pkg = pkg
         soft_remap(pkg, cls, cls_def['map'])
 
-def fetch_translations(translation_set, version=None):
+_index = {}
+def get_index(dialect):
+    global _index
+    if dialect in _index:
+        return _index[dialect]
+
     config_home = os.path.join(xdg_config_home(), 'avantpy-extended')
+
+    try:
+        with open(os.path.join(config_home, f'_index.{dialect}.yaml'), 'r') as f:
+            index = yaml.safe_load(f)
+    except IOError as e:
+        os.makedirs(config_home, exist_ok=True)
+        shutil.copy(os.path.join(os.path.dirname(__file__), f'_index.{dialect}.yaml'), config_home)
+        with open(os.path.join(config_home, f'_index.{dialect}.yaml'), 'r') as f:
+            index = yaml.safe_load(f)
+
+    _index[dialect] = index
+
+    return index
+
+def fetch_translations(translation_set, dialect, version=None):
     cache_home = os.path.join(xdg_config_home(), 'avantpy-extended')
 
     # give precedence to local definitions
@@ -81,19 +91,12 @@ def fetch_translations(translation_set, version=None):
         return development_version
 
     if version is None:
-        try:
-            with open(os.path.join(config_home, '_index.yaml'), 'r') as f:
-                index = yaml.safe_load(f)
-        except IOError as e:
-            os.makedirs(config_home, exist_ok=True)
-            shutil.copy(os.path.join(os.path.dirname(__file__), '_index.yaml'), config_home)
-            with open(os.path.join(config_home, '_index.yaml'), 'r') as f:
-                index = yaml.safe_load(f)
+        index = get_index(dialect)
 
         if translation_set not in index['packages']:
             return None
 
-        translation_package_info = index['packages'][translation_set][-1]
+        translation_package_info = index['packages'][translation_set]
         filename = f'{translation_set}-{translation_package_info["version"]}.yaml'
     else:
         filename = f'{translation_set}-{version}.yaml'
@@ -105,8 +108,3 @@ def fetch_translations(translation_set, version=None):
             f.write(r.text)
 
     return location
-
-def load_package(glbls, package):
-    pkg = __import__(f'{package}__nt')
-    translation_file = fetch_translations(package)
-    load_translations(translation_file, glbls, pkg)

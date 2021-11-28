@@ -1,5 +1,6 @@
 """A custom importer making use of the import hook capability
 """
+import unidecode
 import importlib
 import yaml
 import os
@@ -15,14 +16,13 @@ import friendly_traceback
 from . import session
 from . import converter
 from .my_gettext import gettext_lang
-from .wrappers._translated import class_translate, global_translate, fetch_translations
+from .wrappers._translated import class_translate, global_translate, fetch_translations, get_index
 
 MAIN_MODULE_NAME = None
-COUNTER = 0
 
 friendly_traceback.exclude_file_from_traceback(__file__)
 
-_DEFINITIONS = {}
+_definitions = {}
 
 
 def import_main(name):
@@ -70,20 +70,20 @@ class AvantPyRenamerLoader(Loader):
     def is_package(self, fullname):
         return self.loader.is_package(fullname.replace(self.name, self.rename))
 
-def _level_down(fullname, dct, filename):
+def _level_down(fullname, dct, package_hierarchy):
     dct['translatedSubmodulesReverse'] = {
         v['mapTo'].split('.')[1]: k
         for k, v in dct['translatedSubmodules'].items()
     }
 
     if 'mapTo' in dct:
-        if len(filename) > 2 and filename[1] in dct['translatedSubmodules']:
-            return _level_down(fullname, dct['translatedSubmodules'][filename[1]], filename[1:])
-        elif len(filename) == 2:
-            if filename[1] in dct['translatedSubmodules']:
-                submodule = dct['translatedSubmodules'][filename[1]]
+        if len(package_hierarchy) > 2 and package_hierarchy[1] in dct['translatedSubmodules']:
+            return _level_down(fullname, dct['translatedSubmodules'][package_hierarchy[1]], package_hierarchy[1:])
+        elif len(package_hierarchy) == 2:
+            if package_hierarchy[1] in dct['translatedSubmodules']:
+                submodule = dct['translatedSubmodules'][package_hierarchy[1]]
                 wrapped_name = submodule['mapTo']
-                wrapped_package = wrapped_name.split('.')[0] + '__nt'
+                wrapped_package = wrapped_name.split('.')[0] + '@ntr'
                 total = [wrapped_package] + wrapped_name.split('.')[1:]
                 wrapped_spec = importlib.util.find_spec('.'.join(total), wrapped_package)
                 if wrapped_spec:
@@ -92,16 +92,17 @@ def _level_down(fullname, dct, filename):
                         WrappingLoader(wrapped_name, wrapped_spec, submodule)
                     )
                     return spec
-            elif filename[1] in dct['translatedSubmodulesReverse']:
-                wrapped_package = filename[0] + '__nt'
-                total = [wrapped_package] + filename[1:]
+            elif package_hierarchy[1] in dct['translatedSubmodulesReverse']:
+                wrapped_package = package_hierarchy[0] + '@ntr'
+                total = [wrapped_package] + package_hierarchy[1:]
                 wrapped_spec = importlib.util.find_spec('.'.join(total), wrapped_package)
                 if wrapped_spec:
                     spec = importlib.util.spec_from_loader(
-                        '.'.join(filename),
-                        WrappingLoader('.'.join(filename), wrapped_spec, {})
+                        '.'.join(package_hierarchy),
+                        WrappingLoader('.'.join(package_hierarchy), wrapped_spec, {})
                     )
                     return spec
+
 class AvantPyMetaFinder(MetaPathFinder):
     """A custom finder to locate modules.  The main reason for this code
        is to ensure that our custom loader, which does the code transformations,
@@ -110,6 +111,7 @@ class AvantPyMetaFinder(MetaPathFinder):
     def find_spec(self, fullname, path, target=None):
         """Finds the appropriate properties (spec) of a module, and sets
            its loader."""
+        global _definitions
 
         if not path:
             path = [os.getcwd(), os.path.join(os.path.dirname(__file__), 'wrappers')]
@@ -119,9 +121,13 @@ class AvantPyMetaFinder(MetaPathFinder):
             name = fullname
 
         top_level = fullname.split('.')[0]
+
+        # avantpy_trans namespace should never have translations of its own
         if top_level == 'avantpy_trans':
             return None
-        elif top_level.endswith('__nt'):
+        # we can use the notation @ntr at the end of a package to force
+        # the system to use the original, untranslated version
+        elif top_level.endswith('@ntr'):
             real_fullname = top_level[:-4] + fullname[len(top_level):]
             real_fullname = importlib.util.resolve_name(real_fullname, None)
             for finder in sys.meta_path[1:]:
@@ -137,64 +143,78 @@ class AvantPyMetaFinder(MetaPathFinder):
             spec.loader = AvantPyRenamerLoader(spec.loader, fullname, rename)
             return spec
 
-        for entry in path:
-            exts = [session.state.get_dialect()]
-            if None in exts:
-                exts = session.state.all_dialects()
-            for ext in exts:
-                for filename in (name, fullname):
-                    filename = fullname.split('.')
-                    suffixes = list(filename)
-                    for _ in filename:
-                        info = fetch_translations(suffixes[0])
+        package_hierarchy = fullname.split('.')
+        lang = session.state.get_lang()
+        # If we have a language, check if this import
+        # has recognized translations.
+        if lang:
+            index = get_index(lang)
+            if top_level in index['packages']:
+                package_index = index['packages'][top_level]
 
-                        if top_level in _DEFINITIONS:
-                            if _DEFINITIONS[top_level]:
-                                dct = _DEFINITIONS[top_level]
-                            else:
-                                dct = None
+                if 'name' in package_index:
+                    package_name = package_index['name']
+                else:
+                    package_name = top_level
+
+                if top_level in _definitions:
+                    if _definitions[top_level]:
+                        dct = _definitions[top_level]
+                    else:
+                        dct = None
+                else:
+                    dct = None
+                    if 'builtin' not in package_index or not package_index['builtin']:
+                        try:
+                            dct = importlib.import_module(
+                                f'avantpy_trans.{package_name}',
+                                'avantpy_trans'
+                            ).__dict__[lang]
+                        except (ImportError, KeyError):
+                            _definitions[top_level] = None
                         else:
-                            try:
-                                mod = importlib.import_module(
-                                    f'avantpy_trans.{top_level}',
-                                    'avantpy_trans'
-                                )
-                            except ImportError:
-                                dct = None
-                                _DEFINITIONS[top_level] = None
-                            else:
-                                dct = mod.definition
-                                _DEFINITIONS[top_level] = dct
+                            _definitions[top_level] = dct
 
-                        if not dct and info is not None and os.path.exists(info):
+                    # If we cannot get the installed package for translations for
+                    # this module, try the development and remote YAML versions.
+                    if not dct:
+                        info = fetch_translations(package_name, lang)
+                        if info is not None and os.path.exists(info):
                             with open(info, 'r') as f:
                                 dct = yaml.safe_load(f)
-                        if dct:
-                            if 'mapTo' in dct and len(filename) == 1:
-                                wrapped_name = dct['mapTo']
-                                wrapped_package = wrapped_name.split('.')[0] + '__nt'
-                                total = [wrapped_package] + wrapped_name.split('.')[1:]
-                                wrapped_spec = importlib.util.find_spec('.'.join(total), wrapped_package)
-                                if wrapped_spec:
-                                    spec = importlib.util.spec_from_loader(
-                                        fullname,
-                                        WrappingLoader(wrapped_name, wrapped_spec, dct)
-                                    )
-                                    return spec
-                            if 'translatedSubmodules' in dct:
-                                return _level_down(fullname, dct, filename)
-                        back = suffixes.pop()
+                if dct:
+                    if 'mapTo' in dct and len(package_hierarchy) == 1:
+                        wrapped_name = dct['mapTo']
+                        wrapped_package = wrapped_name.split('.')[0] + '@ntr'
+                        total = [wrapped_package] + wrapped_name.split('.')[1:]
+                        wrapped_spec = importlib.util.find_spec('.'.join(total), wrapped_package)
+                        if wrapped_spec:
+                            spec = importlib.util.spec_from_loader(
+                                fullname,
+                                WrappingLoader(wrapped_name, wrapped_spec, dct)
+                            )
+                            return spec
+                    if 'translatedSubmodules' in dct:
+                        return _level_down(fullname, dct, package_hierarchy)
+                back = suffixes.pop()
 
-                    filename[-1] += '.' + ext
+        exts = [session.state.get_dialect()]
+        if None in exts:
+            exts = session.state.all_dialects()
 
-                    filename = os.path.join(entry, *filename)
-                    if os.path.exists(filename):
-                        return spec_from_file_location(
-                            fullname,
-                            filename,
-                            loader=AvantPyLoader(filename),
-                            submodule_search_locations=None,
-                        )
+        file_hierarchy = fullname.split('.')
+        for ext in exts:
+            file_hierarchy[-1] += '.' + ext
+
+            for entry in path:
+                filename = os.path.join(entry, *file_hierarchy)
+                if os.path.exists(filename):
+                    return spec_from_file_location(
+                        fullname,
+                        filename,
+                        loader=AvantPyLoader(filename),
+                        submodule_search_locations=None,
+                    )
         return None  # Not an AvantPy file
 
 
@@ -231,8 +251,6 @@ class AvantPyLoader(Loader):
 
     def exec_module(self, module):
         """import the source code, converts it before executing it."""
-        global COUNTER
-        COUNTER += 1
         if module.__name__ == MAIN_MODULE_NAME:
             module.__name__ = "__main__"
 

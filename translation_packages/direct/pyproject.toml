@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "avantpy_trans.díreach"
-version = "0.0.1"
+name = "avantpy_trans.direct"
+version = "0.0.2"
 description = "avantpy translations"
 authors = ["Phil Weir <phil.t.weir@googlemail.com>"]
 packages = [

@@ -1,8 +1,11 @@
 import os
 import yaml
 
-with open(os.path.join(
-        os.path.dirname(__file__),
-        'definition.yaml'
-        ), 'r') as f:
-    definition = yaml.safe_load(f)
+for path in os.listdir(os.path.dirname(__file__)):
+    if path.endswith('.yaml'):
+        dialect = path[:-5]
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                path
+                ), 'r') as f:
+            globals()[dialect] = yaml.safe_load(f)
