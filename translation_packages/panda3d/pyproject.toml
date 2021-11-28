@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "avantpy_trans.panda3d"
+version = "0.0.1"
+description = "avantpy translations"
+authors = ["Phil Weir <phil.t.weir@googlemail.com>"]
+packages = [
+    { include = "avantpy_trans" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.6.5"
+PyYAML = "^6.0"

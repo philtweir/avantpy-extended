@@ -1,0 +1,29 @@
+version: '0.0.1'
+coreMap: {}
+mapTo: 'direct'
+translatedSubmodules:
+  cgu:
+    mapTo: 'direct.gui'
+    translatedSubmodules:
+      TéacsScáileáin:
+        mapTo: 'direct.gui.OnscreenText'
+        coreMap:
+          OnscreenText: TéacsScáileáin
+  taispeánadhbonn:
+    mapTo: 'direct.showbase'
+    translatedSubmodules:
+      TaispeánadhBonn:
+        mapTo: 'direct.showbase.ShowBase'
+        coreMap:
+          ShowBase: TaispeánadhBonn
+      OibiachtDíreach:
+        mapTo: 'direct.showbase.DirectObject'
+        coreMap:
+          DirectObject: OibiachtDíreach
+  tasc:
+    mapTo: 'direct.task'
+    translatedSubmodules:
+      Tasc:
+        mapTo: 'direct.task.Task'
+        coreMap:
+          Task: Tasc

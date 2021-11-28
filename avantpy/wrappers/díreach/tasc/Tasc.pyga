@@ -1,2 +1,0 @@
-from direct__nt.task.Task import Task as Tasc
-__path__ = []

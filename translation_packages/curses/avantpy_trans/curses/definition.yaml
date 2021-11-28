@@ -1,0 +1,11 @@
+version: '0.0.1'
+coreMap:
+  wrapper: 'rapar'
+mapTo: 'curses'
+classMap:
+  initscr:
+    via: '_curses'
+    map:
+      clear: 'glanadh'
+      getkey: 'faigheochair'
+      addstr: 'cuirtea'

@@ -9,7 +9,7 @@ import os
 import requests
 from xdg import xdg_config_home, xdg_cache_home
 
-RAW_GITHUB_PREFIX = 'https://raw.githubusercontent.com/philtweir/avantpy-extended/master/avantpy_translations/'
+RAW_GITHUB_PREFIX = 'https://raw.githubusercontent.com/philtweir/avantpy-extended/master/avantpy/wrappers/'
 
 class TranslatedClass:
     def __init__(self, factory, translation_map, *args, soft=False, **kwargs):
@@ -44,7 +44,10 @@ def soft_remap(module, factory_str, translation_map):
 
 def global_translate(globals, module, translation_map):
     globals.update({
-        v: module.__dict__[k] for k, v in translation_map.items()
+        v: module.__dict__[k]
+        for k, v in
+        translation_map.items()
+        if k in module.__dict__
     })
 
 def load_translations(yml, glbls, pkg):
@@ -54,6 +57,17 @@ def load_translations(yml, glbls, pkg):
     if 'coreMap' in mappings:
         global_translate(glbls, pkg, mappings['coreMap'])
 
+    if 'classMap' in mappings:
+        class_translate(pkg, mappings['coreMap'])
+
+def class_translate(pkg, class_map):
+    for cls, cls_def in class_map.items():
+        if 'via' in cls_def:
+            containing_pkg = __import__(cls_def['via'])
+        else:
+            containing_pkg = pkg
+        soft_remap(pkg, cls, cls_def['map'])
+
 def fetch_translations(translation_set, version=None):
     config_home = os.path.join(xdg_config_home(), 'avantpy-extended')
     cache_home = os.path.join(xdg_config_home(), 'avantpy-extended')
@@ -61,9 +75,6 @@ def fetch_translations(translation_set, version=None):
     # give precedence to local definitions
     development_version = os.path.join(
         os.path.dirname(__file__),
-        os.pardir,
-        os.pardir,
-        'avantpy_translations',
         f'{translation_set}.yaml'
     )
     if os.path.exists(development_version):
