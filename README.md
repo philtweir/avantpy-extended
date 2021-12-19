@@ -22,6 +22,36 @@ To run `helloworld.pyga`, go into the directory it is in, and in CMD or Terminal
 python -m avantpy --lang ga -s helloworld.pyga
 ```
 
+## Docker Execution
+
+If hit any issues with the above, try these docker steps, which should improve reproducibility,
+and may help resolve or narrow down the issue. This requires docker to be installed.
+
+The following is intended for debugging by running from a bare Ubuntu OS. If you want to wrap
+`avantpy-extended` in a docker container, starting from one of the official python images, would
+make most sense.
+
+Make sure you have created the `helloworld.pyga` file as described above and run the following
+steps in the same directory.
+
+```sh
+$ docker run -v $(pwd)/helloworld.pyga:/helloworld.pyga --rm -ti ubuntu:21.04
+root@12ab12ab12ab:/# apt update
+root@12ab12ab12ab:/# apt install python3-pip # Answer prompts as ness.
+root@12ab12ab12ab:/# pip install https://github.com/philtweir/avantpy-extended/archive/master.zip
+root@12ab12ab12ab:/# python3 -m avantpy --lang ga -s helloworld.pyga
+Dia dhuit!
+root@12ab12ab12ab:/# exit
+```
+
+If the above does not print `Dia dhuit!` please do raise an issue (unless it is obviously a wider
+problem with your docker installation). If that does work, but you cannot get this to work in
+your own OS, outside of docker, please also raise an issue and highlight that fact.
+
+In the meantime, of course, if it does work inside docker but not outside (and you do not need
+graphics/GUI for your experimenting), you can continue editing `helloworld.pyga` in another window
+and keep re-running the `python3` command above within the same docker container.
+
 # AvantPy (original README)
 
 Python with **training wheels**: _executable pseudocode_ in any language.
