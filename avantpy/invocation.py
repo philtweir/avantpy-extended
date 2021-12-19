@@ -65,7 +65,6 @@ import os
 from . import session
 from . import exception_handling
 from . import import_hook
-from . import gui
 from . import console
 
 
@@ -164,6 +163,7 @@ def main():
             print("Could not find module ", source, "\n")
             raise
     elif args.gui:
+        from . import gui
         gui.main()
     else:
         console.start_console(local_vars=console_dict, show_python=show_python)
