@@ -20,6 +20,13 @@ from .wrappers._translated import class_translate, global_translate, fetch_trans
 
 MAIN_MODULE_NAME = None
 
+# Certain imports are untranslatable, usually because
+# they are (potentially) imported during the search
+# for translations.
+UNTRANSLATABLE = [
+    '_bootlocale' # can be imported during an open in get_index
+]
+
 friendly_traceback.exclude_file_from_traceback(__file__)
 
 _definitions = {}
@@ -112,6 +119,9 @@ class AvantPyMetaFinder(MetaPathFinder):
         """Finds the appropriate properties (spec) of a module, and sets
            its loader."""
         global _definitions
+
+        if fullname in UNTRANSLATABLE:
+            return None
 
         if not path:
             path = [os.getcwd(), os.path.join(os.path.dirname(__file__), 'wrappers')]
