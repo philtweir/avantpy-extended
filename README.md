@@ -40,11 +40,11 @@ root@12ab12ab12ab:/# apt update
 root@12ab12ab12ab:/# apt install python3-pip # Answer prompts as ness.
 root@12ab12ab12ab:/# pip install https://github.com/philtweir/avantpy-extended/archive/master.zip
 root@12ab12ab12ab:/# python3 -m avantpy --lang ga -s helloworld.pyga
-Dia dhuit!
+Dia Dhuit Domhain!
 root@12ab12ab12ab:/# exit
 ```
 
-If the above does not print `Dia dhuit!` please do raise an issue (unless it is obviously a wider
+If the above does not print `Dia Dhuit Domhain!` please do raise an issue (unless it is obviously a wider
 problem with your docker installation). If that does work, but you cannot get this to work in
 your own OS, outside of docker, please also raise an issue and highlight that fact.
 
