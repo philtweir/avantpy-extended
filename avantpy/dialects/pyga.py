@@ -66,10 +66,15 @@ pyga = {
     "str": "tea", # ["tea", "teaghrán"], #string
     "__str__": "__tea__", # ["tea", "teaghrán"], #string
     "__repr__": "__léir__", # léiriú tearma
+    "repr": "léir", # léiriú tearma
     "NotImplemented": "NíChuirtearIBhfeidhm",
     "Exception": "Eisceacht",
     "filter": "scagtar",
     "enumerate": "áirigh", # tearma
     "abs": "dea", # dearbh tearma
     "isinstance": "isásc",
+    "all": "uile",
+    "any": "aon",
+    "await": "fan",
+    "async": "aisionc",
 }

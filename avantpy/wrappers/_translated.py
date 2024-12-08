@@ -38,6 +38,23 @@ class TranslatedClass:
     def __call__(self, *args, **kwargs):
         return self.__dict__['__translation_instance'].__call__(*args, **kwargs)
 
+class TranslatedContextClass(TranslatedClass):
+    def __init__(self, factory, translation_map, context_translation_map, *args, soft=False, **kwargs):
+        super().__init__(factory, translation_map, *args, soft=soft, **kwargs)
+        self.__dict__['__translation_context_map'] = context_translation_map
+
+    def __enter__(self, *args, **kwargs):
+        return TranslatedClass(
+            self.__dict__['__translation_instance'].__enter__,
+            self.__dict__['__translation_context_map'],
+            *args,
+            soft=self.__dict__['__translation_soft'],
+            **kwargs
+        )
+
+    def __exit__(self, *args, **kwargs):
+        return self.__dict__['__translation_instance'].__exit__(*args, **kwargs)
+
 def soft_remap(module, factory_str, translation_map):
     original = getattr(module, factory_str)
     setattr(module, factory_str, lambda *args, **kwargs: TranslatedClass(original, translation_map, *args, soft=True, **kwargs))
